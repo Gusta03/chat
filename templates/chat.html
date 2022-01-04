@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Chat</title>
+    <!--Link to CSS -->
+    <link href="../static/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="../static/css/style.css" rel="stylesheet" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.0/socket.io.js" integrity="sha512-nYuHvSAhY5lFZ4ixSViOwsEKFvlxHMU2NHts1ILuJgOS6ptUmAGt/0i5czIgMOahKZ6JN84YFDA+mCdky7dD8A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script type="text/javascript" charset="utf-8">
+            var socket;
+            $(document).ready(function(){
+                socket = io.connect('http://' + document.domain + ':' + location.port + '/chat');
+                socket.on('connect', function() {
+                    socket.emit('join', {});
+                });
+
+                socket.on('status', function(data) {
+                    $('#chat').val($('#chat').val()+ '<' + data.msg + '>\n');
+                    $('#chat').scrollTop($('#chat')[0].scrollHeight);
+                });
+
+                socket.on('bot', function(data) {
+                    $('#chat').val($('#chat').val() + data.msg + '\n');
+                    $('#chat').scrollTop($('#chat')[0].scrollHeight);
+                });
+
+                // recebe e printa a menssagem
+                socket.on('message', function(data) {
+                    $('#chat').val($('#chat').val() + data.msg + '\n');
+                    $('#chat').scrollTop($('#chat')[0].scrollHeight);
+                });
+ 
+
+                $('#send').click(function(e) {
+                        text = $('#text').val();
+                        $('#text').val('');
+                        socket.emit('text', {msg: text});
+                });
+
+                socket.on('message', (msgs) => {
+                for(msg of msgs) {
+                    addToChat(msg)
+                }
+
+                socket.emit('left', {}, function() {
+                    socket.disconnect();
+                    // go back to the login page
+                    window.location.href = "{{ url_for('index') }}";
+                });
+            })
+            });
+            function leave_room() {
+                socket.emit('left', {}, function() {
+                    socket.disconnect();
+                    // go back to the login page
+                    window.location.href = "{{ url_for('index') }}";
+                });
+            }
+
+            
+        </script>
+  </head>
+
+  <body class="text-center">
+    
+    <div class="chatwindow">
+      <h2 >Chat</h2>
+      <h2>Room : {{session['triagem']}}</h2><br>
+
+      <textarea id="chat" cols="70" rows="10"></textarea><br /><br />
+      <input type="text" id="text" size="60" placeholder="Digite a sua mensagem" />
+      <button type="button" id="send" class="btn btn-success">SEND</button><br /><br />
+      <center><button type="button" class="btn btn-danger" onclick=leave_room()>Leave this Chat</button></center>
+    </div>
+  </body>
+</html>
